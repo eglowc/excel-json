@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+
+    <title>han.lee</title>
+    <meta name="description" content="HTML5 baisc">
+    <!--<script src="http://code.jquery.com/jquery-latest.min.js"></script>-->
+    <style>
+        #drop {
+            border: 2px dashed #bbb;
+            -moz-border-radius: 5px;
+            -webkit-border-radius: 5px;
+            border-radius: 5px;
+            padding: 25px;
+            text-align: center;
+            font: 20pt bold, "Vollkorn";
+            color: #bbb
+        }
+    </style>
+</head>
+
+<body>
+<header>
+    <h1>excel to json</h1>
+</header>
+<article>
+    <div>
+        <p><input type="file" name="xlfile" id="xlf"/> ... or click here to select a file</p>
+    </div>
+    <div>
+        <div id="drop">Drop an XLSX / XLSM / XLSB / ODS / XLS / XML file here to see sheet data</div>
+    </div>
+</article>
+<script lang="javascript" src="dist/xlsx.full.min.js"></script>
+</body>
+<script>
+    function handleFile(e) {
+        var files = e.target.files;
+        var i, f;
+        for (i = 0, f = files[i]; i != files.length; ++i) {
+            var reader = new FileReader();
+            var name = f.name;
+            reader.onload = function (e) {
+                var data = e.target.result;
+
+                var workbook = XLSX.read(data, {type: 'binary'});
+
+                /* DO SOMETHING WITH workbook HERE */
+                var first_sheet_name = workbook.SheetNames[0];
+
+                /* Get worksheet */
+                var worksheet = workbook.Sheets[first_sheet_name];
+                var exceldata = XLSX.utils.sheet_to_json(worksheet);
+
+                upload("/upload", exceldata);
+            };
+            reader.readAsBinaryString(f);
+        }
+    }
+    var xlf = document.getElementById('xlf');
+    xlf.addEventListener('change', handleFile, false);
+
+    function handleDrop(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        var files = e.dataTransfer.files;
+        var i, f;
+        for (i = 0, f = files[i]; i != files.length; ++i) {
+            var reader = new FileReader();
+            var name = f.name;
+            reader.onload = function (e) {
+                var data = e.target.result;
+
+                /* if binary string, read with type 'binary' */
+                var workbook = XLSX.read(data, {type: 'binary'});
+
+                /* DO SOMETHING WITH workbook HERE */
+                var first_sheet_name = workbook.SheetNames[0];
+
+                /* Get worksheet */
+                var worksheet = workbook.Sheets[first_sheet_name];
+                var exceldata = XLSX.utils.sheet_to_json(worksheet);
+
+                upload("/upload", exceldata);
+
+            };
+            reader.readAsBinaryString(f);
+        }
+    }
+
+
+    var drop = document.getElementById('drop');
+    drop.addEventListener('drop', handleDrop, false);
+
+    function handleDragover(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+    }
+    if (drop.addEventListener) {
+        drop.addEventListener('dragenter', handleDragover, false);
+        drop.addEventListener('dragover', handleDragover, false);
+        drop.addEventListener('drop', handleDrop, false);
+    }
+
+
+    function upload(url, data) {
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", url, true);
+        xhr.setRequestHeader("Content-type", "application/json");
+        xhr.setRequestHeader("Accept", "application/json");
+        xhr.onreadystatechange = function() {
+            if(xhr.readyState == 4 && xhr.status == 200) {
+                // TODO :: status changes
+            }
+        }
+        xhr.send(JSON.stringify(data));
+    }
+
+//    function upload(url, data, callback) {
+//        $.ajax({
+//            headers: {
+//                'Accept': 'application/json',
+//                'Content-Type': 'application/json'
+//            },
+//            'type': 'POST',
+//            'url': url,
+//            'data': JSON.stringify(data),
+//            'dataType': 'json',
+//            'success': callback
+//        });
+//    }
+
+
+</script>
+</html>
